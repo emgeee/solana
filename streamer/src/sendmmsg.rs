@@ -4,7 +4,7 @@
 use {
     itertools::izip,
     libc::{iovec, mmsghdr, sockaddr_in, sockaddr_in6, sockaddr_storage},
-    nix::sys::socket::InetAddr,
+    nix::sys::socket::{SockaddrIn, SockaddrIn6},
     std::os::unix::io::AsRawFd,
 };
 use {
@@ -74,14 +74,16 @@ fn mmsghdr_for_packet(
     hdr.msg_hdr.msg_iovlen = 1;
     hdr.msg_hdr.msg_name = addr as *mut _ as *mut _;
 
-    match InetAddr::from_std(dest) {
-        InetAddr::V4(dest) => {
+    match dest {
+        SocketAddr::V4(dest) => {
+            let dest = SockaddrIn::from(dest);
             unsafe {
                 std::ptr::write(addr as *mut _ as *mut _, dest);
             }
             hdr.msg_hdr.msg_namelen = SIZE_OF_SOCKADDR_IN as u32;
         }
-        InetAddr::V6(dest) => {
+        SocketAddr::V6(dest) => {
+            let dest = SockaddrIn6::from(dest);
             unsafe {
                 std::ptr::write(addr as *mut _ as *mut _, dest);
             }
